@@ -80,6 +80,7 @@ WIN_LENGTH = 2048
 BATCH_SIZE = 8
 LEARNING_RATE = 0.001
 EPOCHS = 50
+SAMPLES_PER_EPOCH = 5000
 
 
 # =========================================================
