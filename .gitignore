@@ -1,3 +1,28 @@
 .env
+
+# Python cache
+__pycache__/
+*.py[cod]
+
+# Virtual environment
 .venv/
-data/
+
+# Jupyter checkpoints
+.ipynb_checkpoints/
+
+# OS/editor
+.DS_Store
+Thumbs.db
+.vscode/
+
+# Project data
+data/raw/
+data/processed/
+data/samples/
+
+# Model files
+models/checkpoints/
+models/final/
+
+# Outputs
+outputs/
