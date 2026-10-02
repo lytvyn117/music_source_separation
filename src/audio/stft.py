@@ -17,23 +17,25 @@ def compute_stft(audio):
     """
     Convert an audio waveform into a complex STFT.
 
-    Parameters
-    ----------
-    audio : torch.Tensor
-        Audio waveform.
-
-        Supported shapes:
-        (samples,)
-        (channels, samples)
-        (batch, channels, samples)
-
-    Returns
-    -------
-    torch.Tensor
-        Complex STFT representation.
+    Supported shapes:
+    (samples,)
+    (channels, samples)
+    (batch, channels, samples)
     """
 
     window = create_window(audio.device)
+
+    original_shape = audio.shape
+
+    # Batched stereo audio:
+    # (batch, channels, samples)
+    if audio.ndim == 3:
+        batch_size, channels, samples = audio.shape
+
+        audio = audio.reshape(
+            batch_size * channels,
+            samples
+        )
 
     stft = torch.stft(
         audio,
@@ -43,6 +45,15 @@ def compute_stft(audio):
         window=window,
         return_complex=True
     )
+
+    # Restore batch and channel dimensions
+    if len(original_shape) == 3:
+        stft = stft.reshape(
+            batch_size,
+            channels,
+            stft.shape[-2],
+            stft.shape[-1]
+        )
 
     return stft
 
@@ -63,23 +74,26 @@ def compute_phase(stft):
 
 def compute_istft(stft, length=None):
     """
-    Reconstruct a waveform from a complex STFT.
+    Reconstruct waveform from a complex STFT.
 
-    Parameters
-    ----------
-    stft : torch.Tensor
-        Complex STFT representation.
-
-    length : int, optional
-        Desired number of output samples.
-
-    Returns
-    -------
-    torch.Tensor
-        Reconstructed waveform.
+    Supported shapes:
+    (freq, time)
+    (channels, freq, time)
+    (batch, channels, freq, time)
     """
 
     window = create_window(stft.device)
+
+    original_shape = stft.shape
+
+    if stft.ndim == 4:
+        batch_size, channels, freq, time = stft.shape
+
+        stft = stft.reshape(
+            batch_size * channels,
+            freq,
+            time
+        )
 
     audio = torch.istft(
         stft,
@@ -89,5 +103,12 @@ def compute_istft(stft, length=None):
         window=window,
         length=length
     )
+
+    if len(original_shape) == 4:
+        audio = audio.reshape(
+            batch_size,
+            channels,
+            audio.shape[-1]
+        )
 
     return audio
