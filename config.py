@@ -77,10 +77,16 @@ WIN_LENGTH = 2048
 # TRAINING SETTINGS
 # =========================================================
 
-BATCH_SIZE = 8
+
+BATCH_SIZE = 2
+EPOCHS = 1
+SAMPLES_PER_EPOCH = 8
+
+
+#BATCH_SIZE = 8
 LEARNING_RATE = 0.001
-EPOCHS = 50
-SAMPLES_PER_EPOCH = 5000
+#EPOCHS = 50
+#SAMPLES_PER_EPOCH = 5000
 
 
 # =========================================================
