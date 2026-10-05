@@ -28,24 +28,30 @@ class MUSDBDataset(Dataset):
     def __init__(
         self,
         data_dir=TRAIN_DIR,
+        track_files=None,
         segment_length=SEGMENT_LENGTH_SECONDS,
         samples_per_epoch=SAMPLES_PER_EPOCH,
+        random_segments=True,
+        seed=42,
     ):
         self.data_dir = data_dir
         self.segment_length = segment_length
         self.samples_per_epoch = samples_per_epoch
+        self.random_segments = random_segments
+        self.seed = seed
 
-        self.track_files = sorted(
-            self.data_dir.glob("*.mp4")
-        )
+        if track_files is not None:
+            self.track_files = list(track_files)
+        else:
+            self.track_files = sorted(
+                self.data_dir.glob("*.mp4")
+            )
 
         if not self.track_files:
             raise FileNotFoundError(
-                f"No MUSDB18 files found in {self.data_dir}"
+                "No MUSDB18 files found."
             )
 
-        # Read track metadata once.
-        # This avoids loading full songs just to determine their duration.
         self.track_info = []
 
         for track_path in self.track_files:
@@ -74,8 +80,25 @@ class MUSDBDataset(Dataset):
         Generate one random 6-second training segment.
         """
 
-        # Random song
-        track = random.choice(self.track_info)
+        # Choose a song
+        if self.random_segments:
+            # Training:
+            # random song + random start position
+            track = random.choice(self.track_info)
+
+            rng = random
+
+        else:
+            # Validation:
+            # same index always selects the same song
+            track_index = index % len(self.track_info)
+
+            track = self.track_info[track_index]
+
+            # Local deterministic random generator
+            rng = random.Random(
+                self.seed + index
+            )
 
         track_path = track["path"]
         track_duration = track["duration"]
@@ -85,7 +108,7 @@ class MUSDBDataset(Dataset):
         max_start = track_duration - self.segment_length
 
         if max_start > 0:
-            start = random.uniform(0, max_start)
+            start = rng.uniform(0, max_start)
         else:
             start = 0.0
 

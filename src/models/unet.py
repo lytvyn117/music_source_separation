@@ -97,30 +97,51 @@ class UNet(nn.Module):
             input_channels,
             base_channels
         )
-
         self.pool1 = nn.MaxPool2d(2)
 
         self.encoder2 = DoubleConv(
             base_channels,
             base_channels * 2
         )
-
         self.pool2 = nn.MaxPool2d(2)
 
         self.encoder3 = DoubleConv(
             base_channels * 2,
             base_channels * 4
         )
-
         self.pool3 = nn.MaxPool2d(2)
 
-        # Bottleneck
-        self.bottleneck = DoubleConv(
+        self.encoder4 = DoubleConv(
             base_channels * 4,
             base_channels * 8
         )
+        self.pool4 = nn.MaxPool2d(2)
+
+        self.encoder5 = DoubleConv(
+            base_channels * 8,
+            base_channels * 16
+        )
+        self.pool5 = nn.MaxPool2d(2)
+
+        # Bottleneck
+        self.bottleneck = DoubleConv(
+            base_channels * 16,
+            base_channels * 32
+        )
 
         # Decoder
+        self.decoder5 = UpBlock(
+            base_channels * 32,
+            base_channels * 16,
+            base_channels * 16
+        )
+
+        self.decoder4 = UpBlock(
+            base_channels * 16,
+            base_channels * 8,
+            base_channels * 8
+        )
+
         self.decoder3 = UpBlock(
             base_channels * 8,
             base_channels * 4,
@@ -139,7 +160,7 @@ class UNet(nn.Module):
             base_channels
         )
 
-        # 2 sources × 2 stereo channels = 4 outputs
+        # 2 sources × 2 stereo channels = 4 output channels
         self.output_layer = nn.Conv2d(
             base_channels,
             4,
@@ -159,14 +180,32 @@ class UNet(nn.Module):
             self.pool2(e2)
         )
 
-        # Bottleneck
-        bottleneck = self.bottleneck(
+        e4 = self.encoder4(
             self.pool3(e3)
         )
 
-        # Decoder + skip connections
-        d3 = self.decoder3(
+        e5 = self.encoder5(
+            self.pool4(e4)
+        )
+
+        # Bottleneck
+        bottleneck = self.bottleneck(
+            self.pool5(e5)
+        )
+
+        # Decoder
+        d5 = self.decoder5(
             bottleneck,
+            e5
+        )
+
+        d4 = self.decoder4(
+            d5,
+            e4
+        )
+
+        d3 = self.decoder3(
+            d4,
             e3
         )
 
@@ -184,8 +223,6 @@ class UNet(nn.Module):
 
         batch, _, freq, time = masks.shape
 
-        # 4 channels ->
-        # 2 sources × 2 stereo channels
         masks = masks.reshape(
             batch,
             2,
@@ -194,7 +231,6 @@ class UNet(nn.Module):
             time
         )
 
-        # Normalize masks across the two sources.
         masks = torch.softmax(
             masks,
             dim=1

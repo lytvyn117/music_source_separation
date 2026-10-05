@@ -78,15 +78,18 @@ WIN_LENGTH = 2048
 # =========================================================
 
 
-BATCH_SIZE = 2
-EPOCHS = 1
-SAMPLES_PER_EPOCH = 8
-
+BATCH_SIZE = 4
+EPOCHS = 30
+SAMPLES_PER_EPOCH = 2000
+VALIDATION_SAMPLES = 60
 
 #BATCH_SIZE = 8
 LEARNING_RATE = 0.001
 #EPOCHS = 50
 #SAMPLES_PER_EPOCH = 5000
+#VALIDATION_SAMPLES = 100
+
+CHECKPOINT_EVERY = 1
 
 
 # =========================================================
@@ -99,3 +102,16 @@ OUTPUT_SOURCES = [
     "vocals",
     "instrumental",
 ]
+
+
+# =========================================================
+# RESUME TRAINING SETTINGS
+# =========================================================
+
+RESUME_TRAINING = False
+RESUME_CHECKPOINT = None
+
+# RESUME_TRAINING = True
+# RESUME_CHECKPOINT = RESUME_CHECKPOINT = (
+#     CHECKPOINTS_DIR / "checkpoint_epoch_2.pt"
+# )
