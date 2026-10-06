@@ -5,6 +5,5 @@ soundfile
 stempeg
 ipykernel
 jupyter
+librosa
 torch
-
-

@@ -1,3 +1,4 @@
+import os 
 from pathlib import Path
 
 
@@ -16,7 +17,12 @@ PROJECT_ROOT = Path(__file__).resolve().parent
 
 DATA_DIR = PROJECT_ROOT / "data"
 
-RAW_DIR = DATA_DIR / "raw"
+RAW_DIR = Path(
+    os.getenv(
+        "MUSDB_DATA_ROOT",
+        DATA_DIR / "raw"
+    )
+)
 TRAIN_DIR = RAW_DIR / "train"
 TEST_DIR = RAW_DIR / "test"
 
