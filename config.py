@@ -36,7 +36,12 @@ SAMPLES_DIR = DATA_DIR / "samples"
 
 MODELS_DIR = PROJECT_ROOT / "models"
 
-CHECKPOINTS_DIR = MODELS_DIR / "checkpoints"
+CHECKPOINTS_DIR = Path(
+    os.getenv(
+        "CHECKPOINTS_DIR",
+        MODELS_DIR / "checkpoints"
+    )
+)
 FINAL_MODEL_DIR = MODELS_DIR / "final"
 
 
