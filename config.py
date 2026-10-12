@@ -26,7 +26,13 @@ RAW_DIR = Path(
 TRAIN_DIR = RAW_DIR / "train"
 TEST_DIR = RAW_DIR / "test"
 
-PROCESSED_DIR = DATA_DIR / "processed"
+
+PROCESSED_DIR = Path(
+    os.getenv(
+        "PROCESSED_DATA_ROOT",
+        DATA_DIR / "processed"
+    )
+)
 SAMPLES_DIR = DATA_DIR / "samples"
 
 
@@ -91,7 +97,7 @@ WIN_LENGTH = 2048
 
 BATCH_SIZE = 4
 EPOCHS = 30
-SAMPLES_PER_EPOCH = 2000
+SAMPLES_PER_EPOCH = 1000
 VALIDATION_SAMPLES = 60
 
 #BATCH_SIZE = 8
