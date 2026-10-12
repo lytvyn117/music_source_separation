@@ -32,22 +32,37 @@ def process_split(input_dir: Path, output_dir: Path):
         track_output_dir = output_dir / track_path.stem
         track_output_dir.mkdir(parents=True, exist_ok=True)
 
+        mixture_path = track_output_dir / "mixture.wav"
+        vocals_path = track_output_dir / "vocals.wav"
+        instrumental_path = track_output_dir / "instrumental.wav"
+
+        if (
+            mixture_path.exists()
+            and vocals_path.exists()
+            and instrumental_path.exists()
+        ):
+            print(f"Skipping already processed: {track_path.name}")
+            continue
+
         sf.write(
-            track_output_dir / "mixture.wav",
+            mixture_path,
             mixture,
-            sample_rate
+            sample_rate,
+            subtype="FLOAT"
         )
 
         sf.write(
-            track_output_dir / "vocals.wav",
+            vocals_path,
             vocals,
-            sample_rate
+            sample_rate,
+            subtype="FLOAT"
         )
 
         sf.write(
-            track_output_dir / "instrumental.wav",
+            instrumental_path,
             instrumental,
-            sample_rate
+            sample_rate,
+            subtype="FLOAT"
         )
 
 

@@ -1,11 +1,11 @@
 import random
 
-import stempeg
+import soundfile as sf
 import torch
 from torch.utils.data import Dataset
 
 from config import (
-    TRAIN_DIR,
+    PROCESSED_DIR,
     SAMPLE_RATE,
     SEGMENT_LENGTH_SECONDS,
     SAMPLES_PER_EPOCH,
@@ -13,21 +13,10 @@ from config import (
 
 
 class MUSDBDataset(Dataset):
-    """
-    PyTorch dataset for random MUSDB18 training segments.
-
-    Each sample contains:
-    - mixture
-    - vocals
-    - instrumental
-
-    Instrumental is constructed as:
-    drums + bass + other
-    """
 
     def __init__(
         self,
-        data_dir=TRAIN_DIR,
+        data_dir=PROCESSED_DIR / "train",
         track_files=None,
         segment_length=SEGMENT_LENGTH_SECONDS,
         samples_per_epoch=SAMPLES_PER_EPOCH,
@@ -44,126 +33,92 @@ class MUSDBDataset(Dataset):
             self.track_files = list(track_files)
         else:
             self.track_files = sorted(
-                self.data_dir.glob("*.mp4")
+                path
+                for path in self.data_dir.iterdir()
+                if path.is_dir()
             )
 
         if not self.track_files:
             raise FileNotFoundError(
-                "No MUSDB18 files found."
+                f"No processed MUSDB tracks found in {self.data_dir}"
             )
+
+        self.segment_samples = int(
+            self.segment_length * SAMPLE_RATE
+        )
 
         self.track_info = []
 
         for track_path in self.track_files:
-            info = stempeg.Info(str(track_path))
+            mixture_path = track_path / "mixture.wav"
 
-            duration = float(
-                info.info["format"]["duration"]
-            )
+            info = sf.info(mixture_path)
 
-            self.track_info.append(
-                {
-                    "path": track_path,
-                    "duration": duration,
-                    "info": info,
-                }
-            )
+            self.track_info.append({
+                "path": track_path,
+                "frames": info.frames,
+            })
 
     def __len__(self):
-        """
-        Number of random segments generated per epoch.
-        """
         return self.samples_per_epoch
 
     def __getitem__(self, index):
-        """
-        Generate one random 6-second training segment.
-        """
 
-        # Choose a song
         if self.random_segments:
-            # Training:
-            # random song + random start position
             track = random.choice(self.track_info)
-
             rng = random
-
         else:
-            # Validation:
-            # same index always selects the same song
             track_index = index % len(self.track_info)
-
             track = self.track_info[track_index]
-
-            # Local deterministic random generator
-            rng = random.Random(
-                self.seed + index
-            )
+            rng = random.Random(self.seed + index)
 
         track_path = track["path"]
-        track_duration = track["duration"]
-        info = track["info"]
+        total_frames = track["frames"]
 
-        # Random start position
-        max_start = track_duration - self.segment_length
+        max_start = max(
+            0,
+            total_frames - self.segment_samples
+        )
 
         if max_start > 0:
-            start = rng.uniform(0, max_start)
+            start_frame = rng.randint(0, max_start)
         else:
-            start = 0.0
+            start_frame = 0
 
-        # Read only the required segment
-        stems, sample_rate = stempeg.read_stems(
-            str(track_path),
-            start=start,
-            duration=self.segment_length,
-            info=info,
-            dtype="float32",
+        mixture = self._read_segment(
+            track_path / "mixture.wav",
+            start_frame,
         )
 
-        if sample_rate != SAMPLE_RATE:
-            raise ValueError(
-                f"Expected sample rate {SAMPLE_RATE}, "
-                f"but got {sample_rate}"
-            )
-
-        # MUSDB18:
-        # 0 = mixture
-        # 1 = drums
-        # 2 = bass
-        # 3 = other
-        # 4 = vocals
-
-        mixture = stems[0]
-        drums = stems[1]
-        bass = stems[2]
-        other = stems[3]
-        vocals = stems[4]
-
-        instrumental = drums + bass + other
-
-        # NumPy format:
-        # (samples, channels)
-
-        # PyTorch format:
-        # (channels, samples)
-
-        mixture = torch.from_numpy(
-            mixture.T.copy()
+        vocals = self._read_segment(
+            track_path / "vocals.wav",
+            start_frame,
         )
 
-        vocals = torch.from_numpy(
-            vocals.T.copy()
-        )
-
-        instrumental = torch.from_numpy(
-            instrumental.T.copy()
+        instrumental = self._read_segment(
+            track_path / "instrumental.wav",
+            start_frame,
         )
 
         return {
             "mixture": mixture,
             "vocals": vocals,
             "instrumental": instrumental,
-            "track_name": track_path.stem,
-            "start": start,
+            "track_name": track_path.name,
+            "start": start_frame / SAMPLE_RATE,
         }
+
+    def _read_segment(self, path, start_frame):
+
+        with sf.SoundFile(path) as audio_file:
+            audio_file.seek(start_frame)
+
+            audio = audio_file.read(
+                frames=self.segment_samples,
+                dtype="float32",
+                always_2d=True,
+            )
+
+        return torch.from_numpy(
+            audio.T.copy()
+        )

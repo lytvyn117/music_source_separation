@@ -1,29 +1,25 @@
 import random
 
-from config import TRAIN_DIR
+from config import PROCESSED_DIR
 
 
 def create_train_validation_split(
     validation_ratio=0.15,
     seed=42
 ):
-    """
-    Split MUSDB18 training tracks into
-    training and validation sets.
-
-    The split happens on song level.
-    """
+    train_dir = PROCESSED_DIR / "train"
 
     track_files = sorted(
-        TRAIN_DIR.glob("*.mp4")
+        path
+        for path in train_dir.iterdir()
+        if path.is_dir()
     )
 
     if not track_files:
         raise FileNotFoundError(
-            f"No MUSDB18 files found in {TRAIN_DIR}"
+            f"No processed MUSDB18 tracks found in {train_dir}"
         )
 
-    # Reproducible shuffle
     rng = random.Random(seed)
     rng.shuffle(track_files)
 
