@@ -4,6 +4,8 @@ This source package follows the final Exp10 stereo separator from data loading t
 
 ## Start here
 
+For development without the dataset or a CUDA GPU, see the [two-computer workflow and execution matrix](docs/WORKFLOW.md). MoisesDB can remain on the training computer. The inference commands below require CUDA even when processing your own audio; they do not require MoisesDB. The isolated unit suite uses synthetic data and can run on CPU with compatible dependencies.
+
 | Task | Required external inputs |
 | --- | --- |
 | Separate your audio | Exp10 `best_overall.pt`, 44.1 kHz stereo WAV or FLAC, and the CUDA environment below |
