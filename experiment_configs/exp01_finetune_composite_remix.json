@@ -1,0 +1,26 @@
+{
+  "exp_name": "exp01_finetune_composite_remix",
+  "init_weights": "models\\checkpoints\\best_model.pt",
+  "epochs": 30,
+  "batch_size": 8,
+  "samples_per_epoch": 1500,
+  "lr": 0.0003,
+  "min_lr": 1e-05,
+  "weight_decay": 0.0001,
+  "grad_clip": 1.0,
+  "base_channels": 16,
+  "pad_mode": "exact",
+  "log_input": false,
+  "mask_mode": "softmax",
+  "augment": true,
+  "use_bf16": true,
+  "patience": 12,
+  "max_hours": 12.0,
+  "snapshot_every": 10,
+  "initial_validation": {
+    "val_baseline_l1": 0.26194097258542715,
+    "val_composite_loss": 0.7248106253774542,
+    "val_log_l1": 0.10690469726135857,
+    "val_wav_l1": 0.03917584068288928
+  }
+}

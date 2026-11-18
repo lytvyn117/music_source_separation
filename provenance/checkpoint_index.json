@@ -1,0 +1,20 @@
+{
+  "latest": {
+    "step": 24000,
+    "identity": "6a808d7c04d8cfd66027048ab62ef0b847c47e503bcc0444ef3e02ae79a565d7",
+    "bytes": 187323289,
+    "sha256": "bcad32866b37f98a19e1add45ae28c59f2740f88870fb0e6cad9a5fa021f1bef",
+    "file": "checkpoints/step_024000/state.pt"
+  },
+  "qualification_status": "no_candidate_qualified",
+  "best_overall": {
+    "step": 24000,
+    "identity": "6a808d7c04d8cfd66027048ab62ef0b847c47e503bcc0444ef3e02ae79a565d7",
+    "bytes": 187323289,
+    "sha256": "bcad32866b37f98a19e1add45ae28c59f2740f88870fb0e6cad9a5fa021f1bef",
+    "file": "checkpoints/step_024000/state.pt",
+    "weights": "raw",
+    "vocal_sdr_db": 7.088375763547548
+  },
+  "best_qualified": null
+}

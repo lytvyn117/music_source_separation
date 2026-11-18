@@ -1,0 +1,31 @@
+{
+  "config": {
+    "seed": 42,
+    "lr": 0.0003,
+    "microbatch": 2,
+    "accumulation": 4,
+    "samples_per_epoch": 2048,
+    "epochs": 60,
+    "bf16": true
+  },
+  "loss_weights": {
+    "complex_mse": 1.0,
+    "log_magnitude": 0.5,
+    "waveform": 2.0,
+    "stereo_side": 0.25,
+    "vocal_leakage": 0.25
+  },
+  "warmup_updates": 256,
+  "cosine_floor": 1e-05,
+  "grad_clip": 1.0,
+  "early_stopping_patience": 12,
+  "selection_min_delta": 0.0001,
+  "optimizer": "AdamW",
+  "betas": [
+    0.9,
+    0.999
+  ],
+  "weight_decay": 0.0001,
+  "segment_seconds": 10,
+  "deterministic_cuda": true
+}

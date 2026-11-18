@@ -1,0 +1,40 @@
+{
+  "exp_name": "exp06_independent_sigmoid",
+  "init_weights": "models\\experiments\\exp04_asymmetric_leakage\\best.pt",
+  "epochs": 40,
+  "batch_size": 8,
+  "samples_per_epoch": 4000,
+  "lr": 3e-05,
+  "min_lr": 3e-06,
+  "weight_decay": 0.0001,
+  "grad_clip": 1.0,
+  "base_channels": 16,
+  "pad_mode": "exact",
+  "log_input": false,
+  "mask_mode": "sigmoid",
+  "augment": true,
+  "use_bf16": true,
+  "patience": 10,
+  "max_hours": 5.0,
+  "snapshot_every": 10,
+  "leakage_weight": 1.0,
+  "leakage_margin": 0.05,
+  "leakage_activity_threshold": 0.001,
+  "selection_metric": "val_total_loss",
+  "selection_objective": "val_base_composite_loss + leakage_weight * val_leakage_loss",
+  "best_val_total": 0.6788440221234372,
+  "selection_state": {
+    "best_value": 0.6788440221234372,
+    "best_epoch": 7,
+    "epochs_without_improvement": 3
+  },
+  "initial_validation": {
+    "val_baseline_l1": 0.244743276583521,
+    "val_composite_loss": 0.6840647270804957,
+    "val_base_composite_loss": 0.6784975842425698,
+    "val_log_l1": 0.10022629915099394,
+    "val_wav_l1": 0.03719370263187509,
+    "val_leakage_loss": 0.005567140129737948,
+    "val_total_loss": 0.6840647270804957
+  }
+}

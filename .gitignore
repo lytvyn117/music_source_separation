@@ -1,28 +1,27 @@
-.env
-
-# Python cache
-__pycache__/
-*.py[cod]
-
-# Virtual environment
 .venv/
-
-# Jupyter checkpoints
-.ipynb_checkpoints/
-
-# OS/editor
-.DS_Store
-Thumbs.db
-.vscode/
-
-# Project data
-data/raw/
-data/processed/
-data/samples/
-
-# Model files
-models/checkpoints/
-models/final/
-
-# Outputs
+venv/
+__pycache__/
+.pytest_cache/
+*.py[cod]
+.env
+.env.*
+data/
+datasets/
+development_cache/
+.development-*/
+runs/
 outputs/
+checkpoints/
+*.pt
+*.pth
+*.ckpt
+*.safetensors
+*.npy
+*.npz
+*.wav
+*.flac
+*.mp3
+*.m4a
+*.stem.mp4
+*.zip
+exp10-development*.json

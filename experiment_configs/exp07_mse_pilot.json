@@ -1,0 +1,27 @@
+{
+  "settings": {
+    "cublas_workspace_config": ":4096:8",
+    "deterministic_algorithms": true,
+    "warn_only": false,
+    "cudnn_benchmark": false,
+    "cudnn_deterministic": true
+  },
+  "configuration": {
+    "epochs": 30,
+    "samples_per_epoch": 2000,
+    "batch_size": 4,
+    "lr": 0.0003,
+    "patience": 8,
+    "max_hours": 3.0,
+    "snapshot_every": 10,
+    "min_free_disk_gib": 15.0,
+    "max_reserved_gib": 10.5,
+    "seed": 42
+  },
+  "weights": {
+    "complex": 1.0,
+    "waveform_l1": 0.667601,
+    "mr_stft": 0.070409,
+    "leakage": 0.008311
+  }
+}

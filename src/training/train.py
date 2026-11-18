@@ -203,7 +203,10 @@ def train():
             device
         )
 
+    for group in optimizer.param_groups:
+        group["lr"] = LEARNING_RATE
 
+    print(f"Learning rate: {optimizer.param_groups[0]['lr']}")
     for epoch in range(start_epoch, EPOCHS):
 
         model.train()

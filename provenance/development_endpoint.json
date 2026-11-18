@@ -1,0 +1,20 @@
+{
+  "step": 24000,
+  "songs": 16,
+  "artists": 7,
+  "selected_weights": "raw",
+  "raw": {
+    "vocal_sdr_db": 7.088375763547548,
+    "instrumental_sdr_db": 13.564630731945082,
+    "v_side_sdr_db": 1.739874406657771,
+    "i_side_sdr_db": 9.490667313109174,
+    "abs_vocal_bleed_coeff": 0.1783181744862375
+  },
+  "ema": {
+    "vocal_sdr_db": 7.076912452885474,
+    "instrumental_sdr_db": 13.6122675006922,
+    "v_side_sdr_db": 1.6510500533294554,
+    "i_side_sdr_db": 9.40184299288359,
+    "abs_vocal_bleed_coeff": 0.16545647866223887
+  }
+}

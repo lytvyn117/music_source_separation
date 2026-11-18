@@ -1,0 +1,51 @@
+{
+  "status": "proposed; full training disabled during preflight",
+  "seed": 909,
+  "sample_rate": 44100,
+  "channels": 2,
+  "segment_frames": 176400,
+  "parameters": 11662596,
+  "precision": "BF16 autocast; FP32 spectral math and AdamW",
+  "deterministic_algorithms": true,
+  "activation_checkpointing": true,
+  "microbatch": 4,
+  "gradient_accumulation": 1,
+  "effective_batch": 4,
+  "optimizer": {
+    "name": "AdamW",
+    "lr": 0.0003,
+    "weight_decay": 0.01,
+    "clip_grad_l2": 1
+  },
+  "schedule": {
+    "name": "cosine",
+    "updates": 24000,
+    "min_lr": 0.00003
+  },
+  "loss": {
+    "wave_l1": 1,
+    "mr_complex": 1.8375527837636136
+  },
+  "dataset": {
+    "split": "split_external_final.json",
+    "strict_allowlist": "training_eligibility.json",
+    "train_field": "strict_train",
+    "shard_bytes": 4294967296,
+    "archive_access": "read-only",
+    "sampling": "seeded round-robin shards with uniform recording and window start within each shard"
+  },
+  "checkpoint": {
+    "save_interval_updates": 1000,
+    "identity": "architecture and optimizer settings, seed, allowlist, split and shard plan; resume position derived from update and deterministic schedule"
+  },
+  "validation": {
+    "development_only": true,
+    "proposed_interval_updates": 1000,
+    "selection": "artist-macro vocal SDR with instrumental SDR reported alongside",
+    "final_holdout": "external and sealed"
+  },
+  "alternate_if_vram_constrained": {
+    "microbatch": 2,
+    "gradient_accumulation": 2
+  }
+}

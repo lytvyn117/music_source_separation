@@ -1,0 +1,26 @@
+{
+  "exp_name": "exp03_low_lr_finetune",
+  "init_weights": "models\\experiments\\exp02_finetune_stage2\\best.pt",
+  "epochs": 40,
+  "batch_size": 8,
+  "samples_per_epoch": 2500,
+  "lr": 5e-05,
+  "min_lr": 5e-06,
+  "weight_decay": 0.0001,
+  "grad_clip": 1.0,
+  "base_channels": 16,
+  "pad_mode": "exact",
+  "log_input": false,
+  "mask_mode": "softmax",
+  "augment": true,
+  "use_bf16": true,
+  "patience": 10,
+  "max_hours": 7.5,
+  "snapshot_every": 10,
+  "initial_validation": {
+    "val_baseline_l1": 0.2493109914817308,
+    "val_composite_loss": 0.683172710632023,
+    "val_log_l1": 0.10182825789639824,
+    "val_wav_l1": 0.03675168154663161
+  }
+}

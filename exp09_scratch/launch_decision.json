@@ -1,0 +1,33 @@
+{
+  "seed": 909,
+  "objective": "normalized_mse_bleed",
+  "loss": {
+    "complex_mse": 1.0,
+    "logmag_l1": 0.5,
+    "wave_l1": 2.0,
+    "side_l1": 0.25,
+    "leakage": 0.25
+  },
+  "updates": 24000,
+  "microbatch": 4,
+  "accumulation": 1,
+  "activation_checkpointing": true,
+  "precision": "deterministic CUDA BF16 with FP32 spectral operations",
+  "optimizer": {
+    "name": "AdamW",
+    "lr": 0.0003,
+    "weight_decay": 0.01,
+    "clip_grad_l2": 1.0
+  },
+  "checkpoint_every": 1000,
+  "train_sources": {
+    "moisesdb_strict": 60,
+    "musdb18": 0
+  },
+  "data_sha256": {
+    "manifest.json": "dc1622a6df430158e766fbb82ae0c8c23caca85f8247c5a0dae08bf1cb61516b",
+    "split_external_final.json": "65203d5aec22506ab71d8ecd847d834dcec293c7516fecda6296fbcc68bdb4d4",
+    "training_eligibility.json": "b5bc4fe0af6b9aedcad20bec13bd0f658f397195c337babdbc7f6f77c2bc146d",
+    "training_shards.json": "361e61a9dfaab692d3a538b41cfff5a968657bf7a9dd41f4cd4e8301b96a66af"
+  }
+}
