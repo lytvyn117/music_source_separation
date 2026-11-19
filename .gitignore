@@ -25,3 +25,11 @@ checkpoints/
 *.stem.mp4
 *.zip
 exp10-development*.json
+
+*.egg-info/
+build/
+dist/
+!src/music_separation/data/
+!src/music_separation/data/**
+!archive/research_snapshot/src/data/
+!archive/research_snapshot/src/data/**

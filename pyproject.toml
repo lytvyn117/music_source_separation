@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "music-separation"
+version = "0.1.0"
+requires-python = ">=3.11"
+dependencies = ["torch", "numpy", "soundfile"]
+
+[project.scripts]
+separate-audio = "music_separation.inference.separate:main"
+separation-experiment = "music_separation.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]

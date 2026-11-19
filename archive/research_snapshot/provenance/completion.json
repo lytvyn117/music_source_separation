@@ -1,0 +1,35 @@
+{
+  "step": 24000,
+  "reason": "max_updates",
+  "selection": {
+    "candidates": {
+      "ema": {
+        "eligible": false,
+        "failed_guardrails": [
+          "instrumental_sdr_db",
+          "v_side_sdr_db",
+          "i_side_sdr_db"
+        ]
+      },
+      "raw": {
+        "eligible": false,
+        "failed_guardrails": [
+          "instrumental_sdr_db",
+          "v_side_sdr_db",
+          "i_side_sdr_db"
+        ]
+      }
+    },
+    "best_overall": {
+      "step": 24000,
+      "weights": "raw",
+      "vocal_sdr_db": 7.088375763547548
+    },
+    "best_qualified": null,
+    "anchor_step": null,
+    "anchor_score": null,
+    "stale_validations": 0,
+    "stop": false
+  },
+  "qualification_status": "no_candidate_qualified"
+}

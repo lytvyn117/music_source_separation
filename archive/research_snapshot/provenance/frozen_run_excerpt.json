@@ -1,0 +1,56 @@
+{
+  "identity": "6a808d7c04d8cfd66027048ab62ef0b847c47e503bcc0444ef3e02ae79a565d7",
+  "schema": 2,
+  "mode": "full",
+  "initialization": "random initialization from seed 909",
+  "validation_weights": [
+    "raw",
+    "ema"
+  ],
+  "stopping_weights": "ema",
+  "initial_model_sha256": "7435ad43ee0c221947b359befcfdd50ed35ad5a5cd1f1484c75be86b5edda557",
+  "files_sha256": {
+    "config.json": "beccfd3902fd328c1cb3085565ec811be52685ac4351592d21e0608194d9778b",
+    "roster.json": "ec972e27252bcae2941392f6a3c1144333aee66e4066e87704c6f5f26bbf1fa5",
+    "train_exp10.py": "1e4a10494e8e3953323e3f737533298c62737f7b4d01e0db6bbceea70a200704",
+    "checkpoint.py": "7b37d126fd451b7ecfb7bfa57d571eaae05d074588c4bb6e91e2ff3f8f3f36a6",
+    "selection.py": "ffaa65ac7fdfd66654614ef54eb90251540ed34c798e4f8fda6e9a8fbe4fa41d",
+    "validation.py": "465ba1c007998a89be6aa0b123e074744c3a145fd184475cf6765b7e802259de",
+    "data.py": "5bc57ef5db5ca10f9d39c56f59fb8cd86bab9caa11007f7a2fc9b60f6c0dfa9f",
+    "exp09_core/audit.py": "4a477501dc2abb0ec8e49f0e2748b2142c8085be9070e718b8cbd0a8051f5723",
+    "exp09_core/chunking.py": "dc8bdced74bbaad327d8f09bdbfb5b72ba11e0805c6ef4e884630364962ba8ff",
+    "exp09_core/loader.py": "3a56540b97f6f5272fef680bc1a262ed30b6deccc439a940cd5a637b61770186",
+    "exp09_core/loss_candidates.py": "d61e1d8131ada6ac38679ed761c4bdb536e333c609a1f926ec1c6d0468b78e7f",
+    "exp09_core/metrics.py": "b5330f9d32566b0a45327300aa2a09454eac0f928fcbff27f3f1a4dceb043b8b",
+    "exp09_core/scratch_model.py": "497d7d63553e42b4ca37d64b9f932863b916d25732c5cd119a9f48dcd72b2724",
+    "exp09_core/scratch_train.py": "54f864259d7f2de4ed795461a63df2b5a58259b36d5623306bd3600aae9d94da",
+    "exp09_core/shard_plan.py": "d497e96a1e7f4de7885948f3fc72d5754914cbd948978ce67881363ccf5e550b"
+  },
+  "exp09_identity": "f4a1a3bd8e7a81091ce571c0a7e1e07845dc1b10145b5af60e140f16c6edeadb",
+  "runtime": {
+    "platform": "Windows-11-10.0.26100-SP0",
+    "python": "3.13.5",
+    "torch": "2.7.1+cu128",
+    "cuda": "12.8",
+    "cudnn": 90701,
+    "gpu": "NVIDIA GeForce RTX 3080 Ti",
+    "compute_capability": [
+      8,
+      6
+    ],
+    "driver": [
+      "591.86"
+    ],
+    "device_index": 0,
+    "numpy": "2.5.4",
+    "soundfile": "0.14.0",
+    "libsndfile": "1.2.2",
+    "threads": 4,
+    "cublas_workspace": ":4096:8",
+    "deterministic": true,
+    "attention_backends": [
+      "EFFICIENT_ATTENTION",
+      "MATH"
+    ]
+  }
+}

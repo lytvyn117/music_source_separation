@@ -24,6 +24,7 @@ Run in PowerShell from the extracted package root with Python 3.13 on PATH.
 python -m venv .venv
 $Python = (Resolve-Path .venv/Scripts/python.exe).Path
 & $Python -m pip install -r requirements-exp10.txt
+& $Python -m pip install -e . --no-deps
 & $Python -c "import torch, numpy, soundfile; print(torch.__version__, numpy.__version__, soundfile.__version__); print(torch.version.cuda, torch.cuda.is_available()); assert torch.cuda.is_available()"
 ```
 
@@ -36,7 +37,7 @@ Keep the separately supplied checkpoint outside the source tree. It contains bot
 ```powershell
 $Checkpoint = 'D:/Models/best_overall.pt'
 Get-FileHash -Algorithm SHA256 -LiteralPath $Checkpoint
-& $Python -B exp10_scratch/infer.py --checkpoint $Checkpoint --input-audio 'D:/Audio/mix.wav' --output-dir 'D:/Audio/exp10-stems'
+& $Python -B -m music_separation.inference.separate --checkpoint $Checkpoint --input-audio 'D:/Audio/mix.wav' --output-dir 'D:/Audio/exp10-stems'
 ```
 
 The default selects Raw. Use `--weights ema` for the paired EMA arm. The runner verifies the file digest, loads on the CPU with `weights_only=True`, checks the frozen run identity, step, and tensor digest, and strictly loads the selected state dict before CUDA inference. To load a checkpoint from your own Exp10 run, pass its trusted index digest through `--checkpoint-sha256` and select the corresponding weight arm from its index.
@@ -52,49 +53,33 @@ Supply the approved MoisesDB v0.1 ZIP without repacking it. Header order and ali
 ```powershell
 $Archive = 'D:/Datasets/moisesdb.zip'
 Get-FileHash -Algorithm SHA256 -LiteralPath $Archive
-& $Python -B exp10_scratch/reproduce.py prepare --archive $Archive
-& $Python -B exp10_scratch/reproduce.py evaluate --checkpoint $Checkpoint --weights both --output exp10-development.json
+& $Python -B -m music_separation.cli prepare --archive $Archive
+& $Python -B -m music_separation.cli evaluate --checkpoint $Checkpoint --weights both --output exp10-development.json
 ```
 
-The loader checks role membership, ZIP member sizes and CRCs, native stereo format, and sample alignment. It sums vocal-tagged sources into the vocal reference and the remaining sources into the instrumental reference at native gain. Preparation builds `exp10_scratch/development_cache/` and verifies decoded-reference digests. If an existing cache fails verification, move that cache aside before rebuilding.
+The loader checks role membership, ZIP member sizes and CRCs, native stereo format, and sample alignment. It sums vocal-tagged sources into the vocal reference and the remaining sources into the instrumental reference at native gain. Preparation builds `data/development_cache/` and verifies decoded-reference digests. If an existing cache fails verification, move that cache aside before rebuilding.
 
-The evaluation command writes per-song results and artist macros for Raw and EMA. Compare macros with [the archived endpoint](provenance/development_endpoint.json). Stem SDR uses the median across complete one-second windows with active references at −45 dBFS or above. Stereo Side SDR uses the full-track half-difference of left and right with a −50 dBFS reference threshold. Vocal bleed is the projection of instrumental error onto reference vocals, reported as a coefficient. The macro averages songs within artist, then averages artists equally. The metrics module also implements SI-SDR. Exp10's checkpoint selection used vocal SDR and the guardrails specified in `config.json`.
+The evaluation command writes per-song results and artist macros for Raw and EMA. Compare macros with [the archived endpoint](provenance/development_endpoint.json). Stem SDR uses the median across complete one-second windows with active references at в€’45 dBFS or above. Stereo Side SDR uses the full-track half-difference of left and right with a в€’50 dBFS reference threshold. Vocal bleed is the projection of instrumental error onto reference vocals, reported as a coefficient. The macro averages songs within artist, then averages artists equally. The metrics module also implements SI-SDR. Exp10's checkpoint selection used vocal SDR and the guardrails specified in `config.json`.
 
 ## Train or resume
 
 Prepare the development references first. Allow roughly 12 GiB of working space in addition to the source archive for staged training shards, development references, and run checkpoints. The original run took about six hours on the recorded GPU.
 
 ```powershell
-$Run = 'exp10_scratch/runs/exp10_seed909'
-& $Python -B -u exp10_scratch/reproduce.py train --archive $Archive --out $Run
+$Run = 'runs/exp10_seed909'
+& $Python -B -u -m music_separation.cli train --archive $Archive --out $Run
 ```
 
-The fresh run uses a new output directory directly under `exp10_scratch/runs/`. Append `--resume` to the same command to recover that run from its last intact numbered checkpoint. Resume checks source, references, configuration, and runtime provenance. The frozen checkpoint separately supplied for inference is a complete selected-state alias. Training recovery uses the numbered bundles and the run's provenance.
+The fresh run uses a new output directory directly under `runs/`. Append `--resume` to the same command to recover that run from its last intact numbered checkpoint. Resume checks source, references, configuration, and runtime provenance. The frozen checkpoint separately supplied for inference is a complete selected-state alias. Training recovery uses the numbered bundles and the run's provenance.
 
-The configuration defines seed 909, four four-second crops per update, deterministic CUDA BF16 with FP32 spectral operations, and 24,000 updates from random initialization. AdamW uses 3e−4 initial learning rate, 0.01 weight decay, L2 gradient clipping at 1.0, and cosine annealing to 3e−5. The five objective weights are 1.0 complex MSE, 0.5 log-magnitude L1, 2.0 waveform L1, 0.25 Side L1, and 0.25 vocal leakage. EMA uses decay 0.999. Each 1,000-update checkpoint is validated in Raw and EMA. Use `checkpoint_index.json` to resolve each winning step and weight arm. Reproducing the original outcome requires the frozen data and the recorded environment. Exact agreement across different builds or GPUs is unverified.
+The configuration defines seed 909, four four-second crops per update, deterministic CUDA BF16 with FP32 spectral operations, and 24,000 updates from random initialization. AdamW uses 3eв€’4 initial learning rate, 0.01 weight decay, L2 gradient clipping at 1.0, and cosine annealing to 3eв€’5. The five objective weights are 1.0 complex MSE, 0.5 log-magnitude L1, 2.0 waveform L1, 0.25 Side L1, and 0.25 vocal leakage. EMA uses decay 0.999. Each 1,000-update checkpoint is validated in Raw and EMA. Use `checkpoint_index.json` to resolve each winning step and weight arm. Reproducing the original outcome requires the frozen data and the recorded environment. Exact agreement across different builds or GPUs is unverified.
 
 ## Tests and source map
 
 ```powershell
-Push-Location exp10_scratch
 & $Python -B -m unittest discover -s tests -v
-Pop-Location
-& $Python -B exp10_scratch/smoke_inference.py --checkpoint $Checkpoint
 ```
 
-The unit suite uses synthetic inputs and frozen roster metadata. The CUDA smoke test generates its own audio, invokes the inference command, and verifies the output stems and mixture reconstruction.
+Run from the repository root after editable installation. These tests use synthetic inputs and the included roster. See the [root source map](README.md) and [migration notes](docs/MIGRATION.md).
 
-| Path | Contents |
-| --- | --- |
-| `exp10_scratch/exp09_core/scratch_model.py` | 11,662,596-parameter band-split Transformer with 62 frequency bands, six time/band attention pairs, RoPE, and stereo complex-mask reconstruction |
-| `exp10_scratch/data.py`, `roster.json`, `exp09_core/loader.py`, `shard_plan.py` | Role-specific archive access, WAV and BWF checks, aligned reference construction, bounded temporary shards, and deterministic crop addressing |
-| `exp10_scratch/train_exp10.py`, `config.json`, `exp09_core/scratch_train.py`, `loss_candidates.py` | Original training entry point, exact configuration, optimizer step, and objectives |
-| `exp10_scratch/checkpoint.py`, `selection.py` | Atomic checkpoints, EMA, RNG restoration, selection, and guardrails |
-| `exp10_scratch/infer.py`, `exp09_core/chunking.py` | File inference, strict checkpoint loader, overlap-add, and WAV export |
-| `exp10_scratch/validation.py`, `exp09_core/metrics.py` | Full-song development evaluation and metric calculations |
-| `exp10_scratch/reproduce.py` | Portable dataset path and standalone development evaluation commands |
-| `history/`, `provenance/` | Experiment differences, selected checkpoint index, archived runtime and source hashes, and endpoint metrics |
-
-Fourteen of the fifteen production files match the recorded Exp10 byte hashes. This publication resolves the default dataset path in `data.py` from the current user's home directory. The original hashes remain in `provenance/frozen_run_excerpt.json`, and a new training run records its own identity for this source revision. Resume each run with the source revision that created it. The added `reproduce.py` command passes the supplied archive path to the original trainer at runtime. The inference CLI is adapted from the frozen demo and imports the production model and overlap-add source directly. The roster test uses the digest-bound runtime roster and synthetic rejected-member cases so it can run independently of the original split records. `SOURCE_SHA256SUMS.txt` covers the files in this publication.
-
-[Experiment history](history/EXPERIMENTS.md)
+The archived CUDA smoke script and exact original reproduction instructions are available in [the historical snapshot](archive/research_snapshot/EXP10_REPRODUCTION.md). They target the original layout. Original runs must be resumed using the pre-refactor Git tag; new runs have a distinct source identity.
