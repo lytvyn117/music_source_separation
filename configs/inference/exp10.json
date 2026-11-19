@@ -5,5 +5,6 @@
   "attention_backends": [
     "EFFICIENT_ATTENTION",
     "MATH"
-  ]
+  ],
+  "cpu_group_chunk": 8
 }

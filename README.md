@@ -8,6 +8,7 @@ The current reference is **Exp10**, an independently implemented BS-RoFormer-ins
 - [Setup, training, evaluation and inference](EXP10_REPRODUCTION.md)
 - [Architecture](docs/architecture.md)
 - [Settings and configuration](docs/SETTINGS.md)
+- [Laptop demo on CPU](docs/CPU_DEMO.md)
 - [Experiment index](experiments/README.md)
 - [Migration and reproducibility](docs/MIGRATION.md)
 
@@ -34,7 +35,7 @@ The current reference is **Exp10**, an independently implemented BS-RoFormer-ins
 
 The selected checkpoint is **step 24,000 Raw**, with **7.0884 dB artist-macro vocal SDR** on 16 development recordings from seven artists. This is `best_overall`; no candidate passed all `best_qualified` guardrails. The external final holdout remains separate. Earlier MUSDB18 scores are not directly comparable. See the [recorded endpoint](provenance/development_endpoint.json).
 
-MoisesDB can remain on the training computer. Inference on your own audio only requires a checkpoint and 44.1 kHz stereo WAV/FLAC. The current CLI still requires CUDA; a CPU model smoke test does not constitute a CPU-enabled presentation runner.
+MoisesDB can remain on the training computer. Inference on your own audio only requires a checkpoint and 44.1 kHz stereo WAV/FLAC. Use `--device auto` (default), `--device cpu` or `--device cuda`. Auto selects CUDA when available and otherwise uses CPU.
 
 Install the shared package in an existing environment with `python -m pip install -e . --no-deps`. Run active unit tests from the repository root with `python -B -m unittest discover -s tests -v`. See the reproduction guide for environment setup.
 

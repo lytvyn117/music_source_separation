@@ -4,15 +4,17 @@ This source package follows the final Exp10 stereo separator from data loading t
 
 ## Start here
 
-For development without the dataset or a CUDA GPU, see the [two-computer workflow and execution matrix](docs/WORKFLOW.md). MoisesDB can remain on the training computer. The inference commands below require CUDA even when processing your own audio; they do not require MoisesDB. The isolated unit suite uses synthetic data and can run on CPU with compatible dependencies.
+For development without the dataset or a CUDA GPU, see the [two-computer workflow and execution matrix](docs/WORKFLOW.md). MoisesDB can remain on the training computer. Inference supports CPU and CUDA and does not require MoisesDB. Training and frozen-panel evaluation still require CUDA. The isolated unit suite uses synthetic data and can run on CPU with compatible dependencies.
 
 | Task | Required external inputs |
 | --- | --- |
-| Separate your audio | Exp10 `best_overall.pt`, 44.1 kHz stereo WAV or FLAC, and the CUDA environment below |
+| Separate your audio | Exp10 `best_overall.pt`, 44.1 kHz stereo WAV or FLAC, and a compatible CPU or CUDA environment |
 | Repeat frozen-panel evaluation | The checkpoint and the approved MoisesDB archive to build the 16 development references, or an existing cache that passes all reference checks |
 | Reproduce training from scratch | The original approved MoisesDB archive, sufficient storage, and a CUDA GPU with native BF16 support |
 
 The handoff contains source, frozen train/development configuration and allowlist metadata, and small provenance records. The checkpoint and all audio are supplied separately. The frozen training workflow uses 60 MoisesDB training recordings and 16 artist-disjoint development recordings. The external final holdout stays outside this workflow.
+
+For CPU-only inference, use the [laptop demo instructions](docs/CPU_DEMO.md); the CUDA installation below describes training reproduction.
 
 ## Environment
 
@@ -40,7 +42,7 @@ Get-FileHash -Algorithm SHA256 -LiteralPath $Checkpoint
 & $Python -B -m music_separation.inference.separate --checkpoint $Checkpoint --input-audio 'D:/Audio/mix.wav' --output-dir 'D:/Audio/exp10-stems'
 ```
 
-The default selects Raw. Use `--weights ema` for the paired EMA arm. The runner verifies the file digest, loads on the CPU with `weights_only=True`, checks the frozen run identity, step, and tensor digest, and strictly loads the selected state dict before CUDA inference. To load a checkpoint from your own Exp10 run, pass its trusted index digest through `--checkpoint-sha256` and select the corresponding weight arm from its index.
+The default selects Raw. Use `--weights ema` for the paired EMA arm. The runner verifies the file digest, loads on the CPU with `weights_only=True`, checks the frozen run identity, step, and tensor digest, and strictly loads the selected state dict before inference on the selected device. To load a checkpoint from your own Exp10 run, pass its trusted index digest through `--checkpoint-sha256` and select the corresponding weight arm from its index.
 
 The command writes `vocals.wav`, `instrumental.wav`, and `inference_manifest.json`. It preserves length, stereo channel order, and native gain in IEEE float WAVs. Convert audio to 44.1 kHz stereo before running if needed. Playback software or integer PCM conversion may clip float samples above full scale.
 
@@ -59,7 +61,7 @@ Get-FileHash -Algorithm SHA256 -LiteralPath $Archive
 
 The loader checks role membership, ZIP member sizes and CRCs, native stereo format, and sample alignment. It sums vocal-tagged sources into the vocal reference and the remaining sources into the instrumental reference at native gain. Preparation builds `data/development_cache/` and verifies decoded-reference digests. If an existing cache fails verification, move that cache aside before rebuilding.
 
-The evaluation command writes per-song results and artist macros for Raw and EMA. Compare macros with [the archived endpoint](provenance/development_endpoint.json). Stem SDR uses the median across complete one-second windows with active references at в€’45 dBFS or above. Stereo Side SDR uses the full-track half-difference of left and right with a в€’50 dBFS reference threshold. Vocal bleed is the projection of instrumental error onto reference vocals, reported as a coefficient. The macro averages songs within artist, then averages artists equally. The metrics module also implements SI-SDR. Exp10's checkpoint selection used vocal SDR and the guardrails specified in `config.json`.
+The evaluation command writes per-song results and artist macros for Raw and EMA. Compare macros with [the archived endpoint](provenance/development_endpoint.json). Stem SDR uses the median across complete one-second windows with active references at −45 dBFS or above. Stereo Side SDR uses the full-track half-difference of left and right with a −50 dBFS reference threshold. Vocal bleed is the projection of instrumental error onto reference vocals, reported as a coefficient. The macro averages songs within artist, then averages artists equally. The metrics module also implements SI-SDR. Exp10's checkpoint selection used vocal SDR and the guardrails specified in `config.json`.
 
 ## Train or resume
 
@@ -72,7 +74,7 @@ $Run = 'runs/exp10_seed909'
 
 The fresh run uses a new output directory directly under `runs/`. Append `--resume` to the same command to recover that run from its last intact numbered checkpoint. Resume checks source, references, configuration, and runtime provenance. The frozen checkpoint separately supplied for inference is a complete selected-state alias. Training recovery uses the numbered bundles and the run's provenance.
 
-The configuration defines seed 909, four four-second crops per update, deterministic CUDA BF16 with FP32 spectral operations, and 24,000 updates from random initialization. AdamW uses 3eв€’4 initial learning rate, 0.01 weight decay, L2 gradient clipping at 1.0, and cosine annealing to 3eв€’5. The five objective weights are 1.0 complex MSE, 0.5 log-magnitude L1, 2.0 waveform L1, 0.25 Side L1, and 0.25 vocal leakage. EMA uses decay 0.999. Each 1,000-update checkpoint is validated in Raw and EMA. Use `checkpoint_index.json` to resolve each winning step and weight arm. Reproducing the original outcome requires the frozen data and the recorded environment. Exact agreement across different builds or GPUs is unverified.
+The configuration defines seed 909, four four-second crops per update, deterministic CUDA BF16 with FP32 spectral operations, and 24,000 updates from random initialization. AdamW uses 3e−4 initial learning rate, 0.01 weight decay, L2 gradient clipping at 1.0, and cosine annealing to 3e−5. The five objective weights are 1.0 complex MSE, 0.5 log-magnitude L1, 2.0 waveform L1, 0.25 Side L1, and 0.25 vocal leakage. EMA uses decay 0.999. Each 1,000-update checkpoint is validated in Raw and EMA. Use `checkpoint_index.json` to resolve each winning step and weight arm. Reproducing the original outcome requires the frozen data and the recorded environment. Exact agreement across different builds or GPUs is unverified.
 
 ## Tests and source map
 

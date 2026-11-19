@@ -4,7 +4,7 @@ Exp10 is the project's current reference implementation. Source code is shared t
 
 ## Execution matrix
 
-вЂњLocalвЂќ means a development computer that does not necessarily have CUDA. This table describes the requirements of the current programs, not the results of rerunning them.
+“Local” means a development computer that does not necessarily have CUDA. This table describes the requirements of the current programs, not the results of rerunning them.
 
 | Task | Local development computer | Training computer | Required files / conditions | Entry point |
 | --- | --- | --- | --- | --- |
@@ -14,9 +14,9 @@ Exp10 is the project's current reference implementation. Source code is shared t
 | Train Exp10 from scratch | Not supported by the current CPU workflow | Yes | MoisesDB, verified development cache, CUDA with native BF16, configuration and roster | `python -m music_separation.cli train --archive ... --out ...` |
 | Resume your own run | Not supported by the current CPU workflow | Yes | Matching source and environment, data, numbered checkpoints and run provenance | The same training command with `--resume` |
 | Evaluate the 16 development recordings | Only with CUDA and the required files | Yes | Checkpoint and verified development cache; the archive is needed to build the cache | `python -m music_separation.cli evaluate --checkpoint ... --output ...` |
-| Separate your own song | Only with CUDA: the current CLI has no CPU fallback | Yes | Checkpoint and 44.1 kHz stereo WAV/FLAC; MoisesDB is not needed | `python -m music_separation.inference.separate` |
+| Separate your own song | Yes, CPU or CUDA | Yes | Checkpoint and 44.1 kHz stereo WAV/FLAC; MoisesDB is not needed | `python -m music_separation.inference.separate` |
 | CUDA inference smoke test | Only with CUDA | Yes | Selected checkpoint; the test generates its own audio | Historical snapshot only; see migration notes |
-| Presentation demo | Only with CUDA | Yes | Frozen Exp10 Raw checkpoint and your audio; MoisesDB is not needed | `demos/run_demo.ps1` |
+| Presentation demo | Yes, CPU or CUDA | Yes | Frozen Exp10 Raw checkpoint and your audio; MoisesDB is not needed | `demos/run_demo.ps1` |
 | Analyze metrics and listen to exported results | Yes | Yes | Exported JSON/tables and audio examples authorized for sharing | Outputs from the corresponding run |
 | Reproduce historical experiments in full | Depends on the experiment | Depends on retained artifacts | Historical manifests, data, caches, checkpoints and sometimes external implementations | See the source map in the root README |
 | External final evaluation | Outside routine development | Outside routine training | Separate external holdout and its evaluation protocol | Do not substitute development evaluation |
@@ -40,7 +40,7 @@ $Python = (Resolve-Path .venv/Scripts/python.exe).Path
 1. The developer commits the change to Git and shares the commit, configuration, experiment objective and launch command.
 2. The teammate runs the experiment from that source revision in a separate run directory. That run's source files remain unchanged during training.
 3. Results are returned with the commit, configuration, checkpoint index, metrics, weight arm (Raw/EMA) and step. Small reports are sufficient for analysis; transferring every intermediate checkpoint is unnecessary.
-4. Local inference additionally requires the selected checkpoint and its trusted SHA-256 digest. Separating your own song does not require the dataset, but the current CLI requires CUDA.
+4. Local inference additionally requires the selected checkpoint and its trusted SHA-256 digest. Separating your own song does not require the dataset. The CLI and demo support CPU and CUDA; `auto` selects the available device.
 
 Record the experiment number, Git commit and run directory separately: they are different identifiers. New Exp10 training runs must be stored directly under `runs/`, as required by the current runner.
 

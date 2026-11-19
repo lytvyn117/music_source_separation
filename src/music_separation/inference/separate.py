@@ -62,7 +62,7 @@ def read_input(path):
     return np.ascontiguousarray(audio.T), digest
 
 
-def load_model(path, device, weights="raw", expected_sha=CHECKPOINT_SHA):
+def load_model(path, device, weights="raw", expected_sha=CHECKPOINT_SHA, cpu_group_chunk=8):
     if not path.is_file():
         raise ValueError(f"Checkpoint file does not exist: {path}")
     with path.open("rb") as handle:
@@ -85,7 +85,7 @@ def load_model(path, device, weights="raw", expected_sha=CHECKPOINT_SHA):
     tensor_sha = weight_digest.hexdigest()
     if frozen and tensor_sha != TENSOR_SHA[weights]:
         raise ValueError(f"{weights} tensor digest differs from the freeze.")
-    model = Separator(checkpoint_blocks=True)
+    model = Separator(checkpoint_blocks=True, group_chunk=cpu_group_chunk if device.type == "cpu" else 0)
     model.load_state_dict(state, strict=True)
     return model.eval().requires_grad_(False).to(device), {
         "checkpoint_sha256": digest, "weight_tensor_sha256": tensor_sha,
@@ -93,38 +93,46 @@ def load_model(path, device, weights="raw", expected_sha=CHECKPOINT_SHA):
     }
 
 
-def inference_device(settings=DEFAULT_SETTINGS):
-    if not torch.cuda.is_available():
-        raise ValueError("CUDA is unavailable. Use a CUDA-capable NVIDIA GPU and a CUDA PyTorch build.")
+def inference_device(settings=DEFAULT_SETTINGS, requested="cuda"):
+    if requested not in ("auto", "cpu", "cuda"):
+        raise ValueError("Device must be auto, cpu or cuda")
+    selected = ("cuda" if torch.cuda.is_available() else "cpu") if requested == "auto" else requested
+    if selected == "cuda" and not torch.cuda.is_available():
+        raise ValueError("CUDA is unavailable. Use --device cpu or --device auto.")
     seed_all(settings.seed, deterministic=True)
     torch.set_num_threads(settings.threads)
-    device = torch.device("cuda", 0)
-    torch.cuda.set_device(device)
+    device = torch.device(selected, 0) if selected == "cuda" else torch.device("cpu")
+    if device.type == "cuda":
+        torch.cuda.set_device(device)
     return device
 
 
 @torch.inference_mode()
 def separate(model, mix, device, settings=DEFAULT_SETTINGS):
-    torch.cuda.synchronize(device)
-    torch.cuda.reset_peak_memory_stats(device)
+    if device.type == "cuda":
+        torch.cuda.synchronize(device)
+        torch.cuda.reset_peak_memory_stats(device)
     started = perf_counter()
     starts = chunk_starts(mix.shape[1], SEGMENT, 1 - settings.hop_samples / SEGMENT)
     accumulator = OverlapAdd(2, mix.shape[1], SEGMENT, len(starts) > 1)
-    with sdpa_kernel([getattr(SDPBackend, name) for name in settings.attention_backends]), torch.autocast("cuda", enabled=False):
-        for start in starts:
+    backends = [SDPBackend.MATH] if device.type == "cpu" else [getattr(SDPBackend, name) for name in settings.attention_backends]
+    with sdpa_kernel(backends), torch.autocast(device.type, enabled=False):
+        for index, start in enumerate(starts, 1):
             wave = torch.from_numpy(chunk_batch(mix, [start], SEGMENT)).to(device)
             vocal, backing = model(wave)
             if not bool((torch.isfinite(vocal) & torch.isfinite(backing)).all()):
                 raise ValueError(f"Non-finite model prediction at sample {start}.")
             accumulator.add(vocal[0].cpu().numpy(), start)
+            print(f"Processed window {index}/{len(starts)}", flush=True)
     vocals = accumulator.finish()
     instrumental = mix - vocals
-    torch.cuda.synchronize(device)
+    if device.type == "cuda":
+        torch.cuda.synchronize(device)
     measurements = {
         "chunks": len(starts),
         "inference_seconds": perf_counter() - started,
-        "peak_gpu_allocated_mib": torch.cuda.max_memory_allocated(device) / MIB,
-        "peak_gpu_reserved_mib": torch.cuda.max_memory_reserved(device) / MIB,
+        "peak_gpu_allocated_mib": torch.cuda.max_memory_allocated(device) / MIB if device.type == "cuda" else None,
+        "peak_gpu_reserved_mib": torch.cuda.max_memory_reserved(device) / MIB if device.type == "cuda" else None,
     }
     return vocals, instrumental, measurements
 
@@ -159,6 +167,7 @@ def export(output, vocals, instrumental, manifest):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--device", choices=("auto", "cpu", "cuda"), default="auto")
     parser.add_argument("--config", type=Path, default=INFERENCE_CONFIG)
     parser.add_argument("--input-audio", required=True, type=Path)
     parser.add_argument("--output-dir", required=True, type=Path)
@@ -172,8 +181,9 @@ def main():
             raise ValueError(f"Output directory already exists. Choose a new path: {output}")
         settings = load_inference_settings(args.config)
         mix, input_sha = read_input(source)
-        device = inference_device(settings)
-        model, provenance = load_model(checkpoint, device, args.weights, args.checkpoint_sha256)
+        device = inference_device(settings, args.device)
+        print(f"Using {device} (FP32, {settings.threads} CPU threads)", flush=True)
+        model, provenance = load_model(checkpoint, device, args.weights, args.checkpoint_sha256, settings.cpu_group_chunk)
         vocals, instrumental, timings = separate(model, mix, device, settings)
         residual, tolerance = verify_audio(mix, vocals, instrumental)
         peaks = {name: float(np.abs(stem).max())
@@ -189,7 +199,10 @@ def main():
             "chunk_samples": SEGMENT, "inference_hop_samples": settings.hop_samples,
             "inference_settings": settings.to_dict(),
             "precision": "FP32", "torch": str(torch.__version__),
-            "cuda": torch.version.cuda, "gpu": torch.cuda.get_device_name(device),
+            "device": str(device), "requested_device": args.device,
+            "effective_attention_backends": ["MATH"] if device.type == "cpu" else list(settings.attention_backends),
+            "attention_group_chunk": model.blocks[0].group_chunk,
+            "cuda": torch.version.cuda, "gpu": torch.cuda.get_device_name(device) if device.type == "cuda" else None,
             **timings,
             "mixture_max_abs": residual, "mixture_tolerance": tolerance,
             "peaks_full_scale": peaks, "warnings": warnings,
@@ -199,9 +212,10 @@ def main():
         for warning in warnings:
             print(f"Warning: {warning}")
         print(f"Wrote vocals.wav, instrumental.wav and inference_manifest.json to {output}")
-        print(f"Inference {timings['inference_seconds']:.3f} s. "
-              f"Peak GPU allocated {timings['peak_gpu_allocated_mib']:.2f} MiB, "
-              f"reserved {timings['peak_gpu_reserved_mib']:.2f} MiB.")
+        print(f"Inference {timings['inference_seconds']:.3f} s.")
+        if device.type == "cuda":
+            print(f"Peak GPU allocated {timings['peak_gpu_allocated_mib']:.2f} MiB, "
+                  f"reserved {timings['peak_gpu_reserved_mib']:.2f} MiB.")
     except torch.cuda.OutOfMemoryError:
         parser.exit(1, "Inference failed: CUDA out of memory. Free GPU memory and rerun with a fresh output path.\n")
     except (ValueError, OSError, RuntimeError) as exc:

@@ -5,7 +5,7 @@
 | `src/music_separation/settings.py`: `MODEL` | Fixed Exp10 architecture and audio profile: sample rate, STFT, bands, width, heads, depth and segment size | Not an inference override. Changes define a different model and require compatibility checks or retraining. |
 | `configs/training/exp10/config.json` | Frozen optimizer, scheduler, loss, EMA, selection and evaluation recipe | The trainer validates the recorded recipe; this is not an unrestricted hyperparameter interface. |
 | `configs/training/exp10/roster.json` | Data membership, alignment and reference identities | Hash-bound experimental data contract. |
-| `configs/inference/exp10.json` | Inference hop, thread count, seed and attention backends | Validated runtime options; use `--config` for an alternative profile. |
+| `configs/inference/exp10.json` | Inference hop, thread count, seed, CUDA attention backends and CPU attention group size | Validated runtime options; use `--config` for an alternative profile. |
 | `src/music_separation/paths.py` | Repository resource paths | No machine-specific dataset or checkpoint paths. |
 | CLI arguments | Input, output, archive and checkpoint paths; Raw/EMA choice | Set per invocation. |
 | `inference/separate.py` checkpoint digests | Identity of the trusted frozen checkpoint | Integrity metadata, not a model tuning option. |
@@ -16,7 +16,7 @@ Example after editable installation:
 python -m music_separation.inference.separate --config configs/inference/exp10.json --checkpoint models/final/best_overall.pt --input-audio song.wav --output-dir outputs/example
 ```
 
-All default values and model tensor keys are unchanged. Runtime settings are written into the inference manifest. Unknown fields, invalid hops, invalid thread counts and unsupported attention backend names are rejected. CPU device selection is not implemented by this change; the inference CLI still requires CUDA.
+All default values and model tensor keys are unchanged. Runtime settings are written into the inference manifest. Unknown fields, invalid hops, invalid thread counts and unsupported attention backend names are rejected. Use `--device auto|cpu|cuda`. CPU uses the MATH attention backend and `cpu_group_chunk` (default 8) to bound intermediate attention memory. CUDA retains its existing backend selection and unchunked groups. The manifest records the resolved device and effective settings. Explicit CUDA requests fail clearly when unavailable; auto does not silently retry a failed CUDA run on CPU.
 
 The model profile is deliberately immutable Python data instead of a freely editable architecture JSON: even changes that preserve tensor shapes (for example the STFT hop) can invalidate the meaning of trained weights. Internal initialization and numerical formulas remain implementation details.
 
