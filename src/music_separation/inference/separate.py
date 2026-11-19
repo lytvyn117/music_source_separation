@@ -26,10 +26,14 @@ TENSOR_SHA = {
 }
 IDENTITY = "6a808d7c04d8cfd66027048ab62ef0b847c47e503bcc0444ef3e02ae79a565d7"
 STEP = 24000
-HOP_SAMPLES = 88200
+from music_separation.paths import INFERENCE_CONFIG
+from music_separation.settings import load_inference_settings
+
+DEFAULT_SETTINGS = load_inference_settings(INFERENCE_CONFIG)
+HOP_SAMPLES = DEFAULT_SETTINGS.hop_samples
 MIB = 1024**2
 FORMATS = {"WAV", "WAVEX", "FLAC"}
-BACKENDS = [SDPBackend.EFFICIENT_ATTENTION, SDPBackend.MATH]
+BACKENDS = [getattr(SDPBackend, name) for name in DEFAULT_SETTINGS.attention_backends]
 
 
 def read_input(path):
@@ -89,24 +93,24 @@ def load_model(path, device, weights="raw", expected_sha=CHECKPOINT_SHA):
     }
 
 
-def inference_device():
+def inference_device(settings=DEFAULT_SETTINGS):
     if not torch.cuda.is_available():
         raise ValueError("CUDA is unavailable. Use a CUDA-capable NVIDIA GPU and a CUDA PyTorch build.")
-    seed_all(909, deterministic=True)
-    torch.set_num_threads(4)
+    seed_all(settings.seed, deterministic=True)
+    torch.set_num_threads(settings.threads)
     device = torch.device("cuda", 0)
     torch.cuda.set_device(device)
     return device
 
 
 @torch.inference_mode()
-def separate(model, mix, device):
+def separate(model, mix, device, settings=DEFAULT_SETTINGS):
     torch.cuda.synchronize(device)
     torch.cuda.reset_peak_memory_stats(device)
     started = perf_counter()
-    starts = chunk_starts(mix.shape[1], SEGMENT, 1 - HOP_SAMPLES / SEGMENT)
+    starts = chunk_starts(mix.shape[1], SEGMENT, 1 - settings.hop_samples / SEGMENT)
     accumulator = OverlapAdd(2, mix.shape[1], SEGMENT, len(starts) > 1)
-    with sdpa_kernel(BACKENDS), torch.autocast("cuda", enabled=False):
+    with sdpa_kernel([getattr(SDPBackend, name) for name in settings.attention_backends]), torch.autocast("cuda", enabled=False):
         for start in starts:
             wave = torch.from_numpy(chunk_batch(mix, [start], SEGMENT)).to(device)
             vocal, backing = model(wave)
@@ -155,6 +159,7 @@ def export(output, vocals, instrumental, manifest):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--config", type=Path, default=INFERENCE_CONFIG)
     parser.add_argument("--input-audio", required=True, type=Path)
     parser.add_argument("--output-dir", required=True, type=Path)
     parser.add_argument("--checkpoint", required=True, type=Path)
@@ -165,10 +170,11 @@ def main():
     try:
         if output.exists():
             raise ValueError(f"Output directory already exists. Choose a new path: {output}")
+        settings = load_inference_settings(args.config)
         mix, input_sha = read_input(source)
-        device = inference_device()
+        device = inference_device(settings)
         model, provenance = load_model(checkpoint, device, args.weights, args.checkpoint_sha256)
-        vocals, instrumental, timings = separate(model, mix, device)
+        vocals, instrumental, timings = separate(model, mix, device, settings)
         residual, tolerance = verify_audio(mix, vocals, instrumental)
         peaks = {name: float(np.abs(stem).max())
                  for name, stem in (("input", mix), ("vocals", vocals), ("instrumental", instrumental))}
@@ -180,7 +186,8 @@ def main():
             "parameters": sum(param.numel() for param in model.parameters()),
             "sample_rate_hz": RATE, "channels": 2, "frames": mix.shape[1],
             "sample_order": "as supplied, without channel mixing or reordering",
-            "chunk_samples": SEGMENT, "inference_hop_samples": HOP_SAMPLES,
+            "chunk_samples": SEGMENT, "inference_hop_samples": settings.hop_samples,
+            "inference_settings": settings.to_dict(),
             "precision": "FP32", "torch": str(torch.__version__),
             "cuda": torch.version.cuda, "gpu": torch.cuda.get_device_name(device),
             **timings,

@@ -8,14 +8,16 @@ from torch import nn
 from torch.nn import functional as F
 from torch.utils.checkpoint import checkpoint
 
-RATE = 44100
-N_FFT = 2048
-HOP = 441
-SEGMENT = 4 * RATE
-BANDS = (2,) * 24 + (4,) * 12 + (12,) * 8 + (24,) * 8 + (48,) * 8 + (128, 129)
-WIDTH = 256
-HEADS = 8
-PAIRS = 6
+from music_separation.settings import MODEL
+
+RATE = MODEL.sample_rate
+N_FFT = MODEL.n_fft
+HOP = MODEL.stft_hop
+SEGMENT = MODEL.segment_samples
+BANDS = MODEL.bands
+WIDTH = MODEL.width
+HEADS = MODEL.heads
+PAIRS = MODEL.pairs
 
 
 def seed_all(seed, deterministic=False):

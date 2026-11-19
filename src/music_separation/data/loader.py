@@ -1,3 +1,4 @@
+from music_separation.settings import MODEL
 """Bounded, temporary reference shards for sample-aligned stereo loading."""
 from contextlib import contextmanager
 from pathlib import Path
@@ -9,7 +10,7 @@ from time import perf_counter
 import numpy as np
 import soundfile as sf
 
-RATE = 44100
+RATE = MODEL.sample_rate
 CHANNELS = 2
 BLOCK = 262144
 

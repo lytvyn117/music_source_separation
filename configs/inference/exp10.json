@@ -1,0 +1,9 @@
+{
+  "hop_samples": 88200,
+  "threads": 4,
+  "seed": 909,
+  "attention_backends": [
+    "EFFICIENT_ATTENTION",
+    "MATH"
+  ]
+}

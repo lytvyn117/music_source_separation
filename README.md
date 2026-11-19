@@ -7,6 +7,7 @@ The current reference is **Exp10**, an independently implemented BS-RoFormer-ins
 - [Two-computer workflow and execution matrix](docs/WORKFLOW.md)
 - [Setup, training, evaluation and inference](EXP10_REPRODUCTION.md)
 - [Architecture](docs/architecture.md)
+- [Settings and configuration](docs/SETTINGS.md)
 - [Experiment index](experiments/README.md)
 - [Migration and reproducibility](docs/MIGRATION.md)
 

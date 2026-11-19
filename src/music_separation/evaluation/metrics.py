@@ -1,3 +1,4 @@
+from music_separation.settings import MODEL
 from typing import Dict, Tuple
 
 import numpy as np
@@ -58,7 +59,7 @@ def compute_si_sdr(
 def compute_framewise_metrics(
     reference: np.ndarray,
     estimate: np.ndarray,
-    sample_rate: int = 44100,
+    sample_rate: int = MODEL.sample_rate,
     window_seconds: float = 1.0,
     silence_threshold_db: float = -45.0,
     eps: float = 1e-8,
@@ -119,7 +120,7 @@ def evaluate_stem_pair(
     reference: np.ndarray,
     estimate: np.ndarray,
     mixture: np.ndarray,
-    sample_rate: int = 44100,
+    sample_rate: int = MODEL.sample_rate,
     eps: float = 1e-8,
 ) -> Dict[str, float]:
     """

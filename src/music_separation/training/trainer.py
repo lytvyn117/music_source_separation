@@ -26,7 +26,7 @@ from music_separation.training.engine import ExactRun, model_digest
 from music_separation.data.shard_plan import sample_position
 
 BACKENDS = [SDPBackend.EFFICIENT_ATTENTION, SDPBackend.MATH]
-from music_separation.paths import CONFIG_DIR, PACKAGE_ROOT
+from music_separation.paths import CONFIG_DIR, PACKAGE_ROOT, INFERENCE_CONFIG
 CONFIG = CONFIG_DIR / "config.json"
 GIB = 1024**3
 
@@ -78,7 +78,7 @@ def setup(seed):
 
 
 def provenance(config, references, runtime, mode):
-    inputs = [CONFIG, CONFIG_DIR / "roster.json", *sorted(PACKAGE_ROOT.rglob("*.py"))]
+    inputs = [CONFIG, CONFIG_DIR / "roster.json", INFERENCE_CONFIG, *sorted(PACKAGE_ROOT.rglob("*.py"))]
     payload = {
         "schema": 3, "mode": mode, "initialization": "random initialization from seed 909",
         "validation_weights": ["raw", "ema"], "stopping_weights": "ema",
